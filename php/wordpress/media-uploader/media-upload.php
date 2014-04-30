@@ -1,5 +1,5 @@
 <?php
-$field_id = '_id_name';
+$field_id = '_id_name'; // Field name is $field_id + '_image_id'
 $image_id = 0; // Switch this out with the value (or source) of your stored image id
 $image = false;
 if ( 0 < $image_id ) {
@@ -16,6 +16,6 @@ if ( 0 < $image_id ) {
             value="<?php _e( 'Remove Image' ); ?>"><?php _e( 'Remove Image' ); ?></button><br />
     <input type="hidden" name="<?php echo $field_id; ?>_image_id" value="<?php echo $image ? $image_id : ''; ?>"
            class="s8_media_uploader_output_id <?php echo $field_id; ?>" />
-    <img class="s8_media_uploader_output <?php echo $field_id; ?>" style="display: <?php echo $image ? 'block' : 'none'; ?>; margin: 15px 0 0;"
+    <img class="s8_media_uploader_output <?php echo $field_id; ?>" style="display: <?php echo $image ? 'block' : 'none'; ?>; margin: 15px 0 0; max-height: 150px; max-width: 150px;"
          src="<?php if ( $image && $image[0] ) echo $image[0]; ?>" />
 </p>
