@@ -7,7 +7,7 @@
  * WordPress 3.5+ media custom uploader for use in meta boxes and the WP admin area in general.
  * Written by Sideways8 Interactive, LLC and David Wood
  * http://sideways8.com/
- * http://davidwood.co/
+ * http://davidwood.ninja/
  */
 jQuery(document).ready( function($) {
     var s8_media_file_frame,
