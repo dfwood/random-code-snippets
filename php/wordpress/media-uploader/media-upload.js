@@ -9,77 +9,61 @@
  * http://sideways8.com/
  * http://davidwood.ninja/
  */
-jQuery(document).ready( function($) {
-    var namespace = 's8_',// This is the namespace used for classes (e.g. class="s8_media_uploader")
-        dataNamespace = 's8media-',// This is the namespace used for data attributes (e.g. data-s8media-group="some-value")
-        classes = { // NOTE: The classes are automatically prefixed with the namespace!
-            uploadButton: 'media_uploader', // Class of the upload/select button
-            removeButton: 'media_remove', // Class of the remove button
-            outputAttachmentId: 'media_id_output', // This is where the attachment ID will be placed, should be an input field class
-            outputAttachmentName: 'media_filename', // This should be the class used on a tag whose contents should be the filename
-            outputImageSrc: 'media_img' // This should be the class name used on the image tag
-        },
-        i18nStrings = { // For release, these should really be localized using the localize_scripts function
-            // These are the defaults if the button doesn't define an override
-            title: 'Media Selector', // The title at the top of the media uploader screen
-            buttonText: 'Use Selected' // The text on the select/use button in the media uploader
-        },
-        currentGroup, // Internal use only
-        media_frames = {}, // Internal use only
-        mediaTypes = [ 'audio', 'video', 'image', 'text' ]; // Internal use only
-    var s8_identifier;
-    // Attach the upload/add button to our functionality
-    $( '.' + namespace + classes.uploadButton ).bind( 'click', function(e) {
+
+jQuery(document).ready(function($) {
+    var s8MediaLib = {
+        buttonText: 'Use File',
+        outputClass: '.s8_media_upload_preview',
+        outputIdClass: '.s8_media_upload_output',
+        removeButtonClass: '.s8_media_upload_remove',
+        uploadButtonClass: '.s8_media_uploader',
+        uploadTitle: 'Select File'
+    };
+    var s8MediaUploadFrame = {};
+
+    $(s8MediaLib.uploadButtonClass).bind('click', function(e) {
         e.preventDefault();
-        var currentElem = $(this),
-            currentFrame,
-            currentType,
-            currentId;
-        if ( currentElem.attr('id') ) {
-            currentId = $(this).attr('id');
-        } else {
-            currentId = namespace + 'frame_' + Object.keys(media_frames).length;
-            $(this).attr('id', currentId);
-        }
-        if ( ! media_frames[ currentId ] ) {
-            // Setup our options
-            var options = {
-                title: ( currentElem.data('title') || i18nStrings.title ),
-                button: { text: ( currentElem.data('button') ? currentElem.data('button') : i18nStrings.buttonText ) },
-                class: currentId
+        var s8CurrentItem = $(this);
+        var s8ID = s8CurrentItem.attr('data-s8id');
+
+        if ( ! s8MediaUploadFrame[s8ID] ) {
+            var mediaArgs = {
+                class: s8ID,
+                button: {
+                    text: s8CurrentItem.attr('data-s8button') ? s8CurrentItem.attr('data-s8button') : s8MediaLib.buttonText
+                },
+                title: s8CurrentItem.attr('data-s8title') ? s8CurrentItem.attr('data-s8title') : s8MediaLib.uploadTitle
             };
-            if ( currentElem.data('file-type') ) {
-                if ( 0 <= $.inArray( currentElem.data('file-type'), mediaTypes ) ) {
-                    currentType = currentElem.data('file-type');
-                    options['library'] = { type: currentType };
-                }
+
+            if ( s8CurrentItem.attr('data-s8type') ) {
+                mediaArgs['type'] = s8CurrentItem.attr('data-s8type');
             }
-            // Create media frame
-            media_frames[ currentId ] = currentFrame = wp.media.frames.file_frame = wp.media( options );
-            // Setup our frame listeners
-            currentFrame.on( 'select', function() {
-                var attachment = currentFrame.state().get('selection').first().toJSON();
-                if ( 'image' == currentType ) {
-                    // Have the image be visible immediately
-                    $( '.' + namespace + classes.outputImageSrc + '.' + currentId ).attr( 'src', attachment.url ).css( 'display', 'block' );
+
+            s8MediaUploadFrame[s8ID] = wp.media.frames.file_frame = wp.media(mediaArgs);
+            s8MediaUploadFrame[s8ID].on('select', function() {
+                var attachment = s8MediaUploadFrame[s8ID].state().get('selection').first().toJSON();
+                var fileType = s8CurrentItem.data('s8type') ? s8CurrentItem.data('s8type') : 'image';
+                if ( 'image' == fileType ) {
+                    // Output image preview
+                    $(s8MediaLib.outputClass + '[data-s8id="' + s8ID + '"]').attr('src', attachment.url).show();
                 } else {
                     // Show the file name
-                    $( '.' + namespace + classes.outputAttachmentName + '.' + currentId ).html( attachment.filename).css( 'display', 'block' );
+                    $(s8MediaLib.outputClass + '[data-s8id="' + s8ID + '"]').html(attachment.filename).show();
                 }
-                // Put the attachment ID where we can save it
-                $( '.' + namespace + classes.outputAttachmentId + '.' + currentId ).attr( 'value', attachment.id );
-                $( '.' + namespace + classes.removeButton + '.' + currentId ).css( 'display', 'inline-block' );
-            } );
+                // Output attachment ID and enable remove button
+                $(s8MediaLib.outputIdClass + '[data-s8id="' + s8ID + '"]').attr('value', attachment.id);
+                $(s8MediaLib.removeButtonClass + '[data-s8id="' + s8ID + '"]').removeAttr('disabled');
+            });
         }
-        // Open the modal
-        media_frames[ currentId ].open();
-    } );
-    // Attach the remove button to our functionality
-    /*$( '.s8_media_uploader_remove' ).bind( 'click', function(e) {
-     e.preventDefault();
-     s8_identifier = $(this).data( 'id' );
-     $(this).css( 'display', 'none' );
-     $( '.s8_media_uploader_output.' + s8_identifier ).css( 'display', 'none' );
-     $( '.s8_media_uploader_output_id.' + s8_identifier ).attr( 'value', '' );
-     } );*/
-} );
+        s8MediaUploadFrame[s8ID].open();
+    });
+
+    // Handle removing of uploaded item from option
+    $(s8MediaLib.removeButtonClass).bind('click', function(e) {
+        e.preventDefault();
+        var s8ID = $(this).attr('data-s8id');
+        $(this).attr('disabled', 'disabled');
+        $(s8MediaLib.outputClass + '[data-s8id="' + s8ID + '"]').hide();
+        $(s8MediaLib.outputIdClass + '[data-s8id="' + s8ID + '"]').attr('value', '');
+    });
+});
